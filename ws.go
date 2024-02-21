@@ -132,20 +132,26 @@ func playSeries(s series) bool {
 }
 
 func main() {
-	skipFirst := true
+	skipFirstTime := true
 	for i := 0; i < len(years); i++ {
 
-		if !skipFirst {
+		if !skipFirstTime {
 			color.Cyanln("\nDo you want to play another series? (y/n)")
 			var answer string
 			if _, err := fmt.Scanf("%s", &answer); err != nil {
-				break
+				if err.Error() == "unexpected newline" {
+					// on windows I need to read twice
+					if _, err := fmt.Scanf("%s", &answer); err != nil {
+						fmt.Println(err)
+						break
+					}
+				}
 			}
 			if strings.TrimRight(strings.ToLower(answer), "\n") != "y" {
 				break
 			}
 		}
-		skipFirst = false
+		skipFirstTime = false
 
 		if !playSeries(years[i]) {
 			break
