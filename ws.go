@@ -3,6 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
+
+	"github.com/gookit/color"
 )
 
 type series struct {
@@ -40,9 +43,9 @@ func playGame(game, opScore, maxRuns int) (GameResult, int) {
 	if maxRuns < 1 {
 		number = 0
 	} else {
-		var err1 = errors.New("No value entered")
+		var err1 = errors.New("no value entered")
 
-		fmt.Printf("You have %d runs remaining. How many runs will you score in this game?\n", maxRuns)
+		color.Cyan.Printf("You have %d runs remaining. How many runs will you score in this game?\n", maxRuns)
 		// scan until we get a number
 		for err1 != nil {
 			_, err := fmt.Scanf("%d", &number)
@@ -52,8 +55,8 @@ func playGame(game, opScore, maxRuns int) (GameResult, int) {
 					number = 0
 				}
 				if number > maxRuns {
-					err1 = errors.New("Invalid number of runs")
-					fmt.Printf("Enter a number equal to or less than %d\n", maxRuns)
+					err1 = errors.New("invalid number of runs")
+					color.Cyan.Printf("Enter a number equal to or less than %d\n", maxRuns)
 				}
 			}
 		}
@@ -62,19 +65,19 @@ func playGame(game, opScore, maxRuns int) (GameResult, int) {
 	var result GameResult
 	switch {
 	case (number > opScore):
-		fmt.Printf("You won Game %d: %d to %d.\n", game+1, number, opScore)
+		color.Yellowf("You won Game %d: %d to %d.\n", game+1, number, opScore)
 		result = WIN
 	case (number < opScore):
-		fmt.Printf("You lost Game %d: %d to %d\n", game+1, number, opScore)
+		color.Redf("You lost Game %d: %d to %d\n", game+1, number, opScore)
 		result = LOSS
 	case (number == opScore):
 		// in the case of tie, will give the player the win if they have more runs available
 		if number < maxRuns {
 			number++
-			fmt.Printf("You won Game %d in extra innings: %d to %d\n", game+1, number, opScore)
+			color.Yellowf("You won Game %d in extra innings: %d to %d\n", game+1, number, opScore)
 			result = WIN
 		} else {
-			fmt.Printf("You lost Game %d in extra innings: %d to %d\n", game+1, number, opScore+1)
+			color.Redf("You lost Game %d in extra innings: %d to %d\n", game+1, number, opScore+1)
 			result = LOSS
 		}
 	}
@@ -96,13 +99,13 @@ func countWins(results [7]GameResult) (int, int) {
 
 func playSeries(s series) bool {
 	// print intro
-	fmt.Println("\n\nIn", s.year, s.winner, "scored", s.winnerRuns, "and defeated the", s.loser, "who scored", s.loserRuns, "runs.")
-	fmt.Println("Can you repeat this feat?\n")
+	color.Green.Print("\n\nIn ", s.year, " the ", s.winner, " scored ", s.winnerRuns, " and defeated the ", s.loser, " who scored ", s.loserRuns, " runs.")
+	color.Green.Print("Can you repeat this feat?\n")
 	results := [7]GameResult{UNPLAYED, UNPLAYED, UNPLAYED, UNPLAYED, UNPLAYED, UNPLAYED, UNPLAYED}
 	runsRemaining := s.winnerRuns
 	var runsUsed int
 	for i := 0; i < 7; i++ {
-		fmt.Println("\nGame", i+1)
+		color.Cyan.Printf("\nGame %d\n", i+1)
 		results[i], runsUsed = playGame(i, s.opponentScores[i], runsRemaining)
 		runsRemaining -= runsUsed
 
@@ -110,26 +113,43 @@ func playSeries(s series) bool {
 		wins, losses = countWins(results)
 
 		if wins >= 4 {
-			fmt.Printf("You won the World Series %d games to %d!\n", wins, losses)
-			return true
+			color.Yellowf("🎉🥳🍾 You won the World Series %d games to %d!🎉🥳🍾 \n", wins, losses)
+			break
 		} else if losses >= 4 {
-			fmt.Printf("You lost the World Series %d games to %d!\n", wins, losses)
-			return true
+			color.Redf("😢 You lost the World Series %d games to %d!😢\n", wins, losses)
+			break
 		} else {
 			if wins > losses {
-				fmt.Printf("You lead the series %d games to %d.\n", wins, losses)
+				color.Cyanf("You lead the series %d games to %d.\n", wins, losses)
 			} else if losses > wins {
-				fmt.Printf("You trail in the series %d games to %d.\n", wins, losses)
+				color.Cyanf("You trail in the series %d games to %d.\n", wins, losses)
 			} else {
-				fmt.Printf("The series tied %d games each.\n", wins)
+				color.Cyanf("The series tied %d games each.\n", wins)
 			}
 		}
 	}
-	return false
+	return true
 }
 
 func main() {
+	skipFirst := true
 	for i := 0; i < len(years); i++ {
-		playSeries(years[i])
+
+		if !skipFirst {
+			color.Cyanln("\nDo you want to play another series? (y/n)")
+			var answer string
+			if _, err := fmt.Scanf("%s", &answer); err != nil {
+				break
+			}
+			if strings.TrimRight(strings.ToLower(answer), "\n") != "y" {
+				break
+			}
+		}
+		skipFirst = false
+
+		if !playSeries(years[i]) {
+			break
+		}
 	}
+	color.Cyanln("Thanks for playing!")
 }
