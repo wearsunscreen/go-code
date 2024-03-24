@@ -1,3 +1,6 @@
+/*
+	A bidding game based on historical World Series results. 
+*/
 package main
 
 import (
